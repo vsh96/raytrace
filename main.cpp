@@ -1,6 +1,6 @@
 #include <fstream>
-#include <vec3.hpp>
-#include <ray.hpp>
+#include "vec3.hpp"
+#include "ray.hpp"
 
 vec3 color(const ray& r)
 {
