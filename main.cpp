@@ -1,9 +1,12 @@
 #include <fstream>
 #include <float.h>
+#include <stdlib.h>
 #include "vec3.hpp"
 #include "ray.hpp"
 #include "sphere.hpp"
 #include "scene.hpp"
+#include "camera.hpp"
+
 
 float hit_sphere(const vec3& pos, float rad, const ray& r)
 {
@@ -32,6 +35,7 @@ int main()
 {
     int IMG_WIDTH = 400;
     int IMG_HEIGHT = 200;
+    int SAMPLE_COUNT = 100;
 
     std::ofstream image("result.ppm");
 
@@ -46,18 +50,22 @@ int main()
     list[0] = new sphere(vec3(0.0, 0.0, -1.0), 0.5);
     list[1] = new sphere(vec3(0.0, -100.5, -1.0), 100.0);
     body *world = new scene(list, 2);
-    //body *world = new sphere(vec3(0.0, 0.0, -1.0), 0.5);
+    camera cam;
 
     for( int j = IMG_HEIGHT-1; j>=0; j-- )
     for( int i = 0; i<IMG_WIDTH; i++ )
     {
-        float u = float( i )/float(IMG_WIDTH);
-        float v = float( j )/float(IMG_HEIGHT);
+        vec3 col(0,0,0);
+        for( int k = 0; k<SAMPLE_COUNT; k++ )
+        {
+            float u = ( i + float(rand()%1000-500)/1000 )/float(IMG_WIDTH);
+            float v = ( j  + float(rand()%1000-500)/1000 )/float(IMG_HEIGHT);
 
-        ray r(origin, normalize(corner + horiz*u + vert*v));
-        vec3 col = color(r, world);
+            ray r = cam.getRay(u, v);
+            col = col + color(r, world);
+        }
 
-        float b = 0.2f;
+        col = col/float(SAMPLE_COUNT);
         image << int(col[0]*255.99f) << " " << int(col[1]*255.99f) << " " << int(col[2]*255.99f) << "\n";
     }
 
