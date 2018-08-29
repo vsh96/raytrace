@@ -11,5 +11,5 @@ struct hit
 class body
 {
 public:
-    virtual bool hit(const ray& r, float max, hit& h) const = 0;
+    virtual bool trace(const ray& r, float max, hit& h) const = 0;
 };

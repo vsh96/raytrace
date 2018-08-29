@@ -1,6 +1,9 @@
 #include <fstream>
+#include <float.h>
 #include "vec3.hpp"
 #include "ray.hpp"
+#include "sphere.hpp"
+#include "scene.hpp"
 
 float hit_sphere(const vec3& pos, float rad, const ray& r)
 {
@@ -13,16 +16,15 @@ float hit_sphere(const vec3& pos, float rad, const ray& r)
     return (-b-sqrt(d))/(2*a);
 }
 
-vec3 color(const ray& r)
+vec3 color(const ray& r, body *b)
 {
-    float t = hit_sphere(vec3(0.0f, 0.0f, -1.0f), 0.5f, r);
-    if(t>0)
+    hit h;
+    if(b->trace(r, FLT_MAX, h))
     {
-        vec3 n = normalize(r.point(t)-vec3(0.0f, 0.0f, -1.0f));
-        return (n+vec3(1.0f, 1.0f, 1.0f))*0.5f;
+        return (h.normal+vec3(1.0f, 1.0f, 1.0f))*0.5f;
     }
     
-    t = (r.direction.y() + 1.0f)*0.5f;
+    float t = (r.direction.y() + 1.0f)*0.5f;
     return vec3(1.0f, 1.0f, 1.0f)*(1.0f - t)+vec3(0.5f, 0.7f, 1.0f)*t;
 }
 
@@ -40,6 +42,12 @@ int main()
     vec3 vert(0.0f, 2.0f, 0.0f);
     vec3 origin(0.0f, 0.0f, 0.0f);
 
+    body *list[2];
+    list[0] = new sphere(vec3(0.0, 0.0, -1.0), 0.5);
+    list[1] = new sphere(vec3(0.0, -100.5, -1.0), 100.0);
+    body *world = new scene(list, 2);
+    //body *world = new sphere(vec3(0.0, 0.0, -1.0), 0.5);
+
     for( int j = IMG_HEIGHT-1; j>=0; j-- )
     for( int i = 0; i<IMG_WIDTH; i++ )
     {
@@ -47,7 +55,7 @@ int main()
         float v = float( j )/float(IMG_HEIGHT);
 
         ray r(origin, normalize(corner + horiz*u + vert*v));
-        vec3 col = color(r);
+        vec3 col = color(r, world);
 
         float b = 0.2f;
         image << int(col[0]*255.99f) << " " << int(col[1]*255.99f) << " " << int(col[2]*255.99f) << "\n";
