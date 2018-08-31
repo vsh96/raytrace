@@ -7,6 +7,14 @@
 #include "scene.hpp"
 #include "camera.hpp"
 
+vec3 sphereRand()
+{
+    vec3 p;
+    do{
+        p = vec3(drand48(),drand48(),drand48())*2 - vec3(1,1,1);
+    }while(dot(p,p)<1.0f);
+    return p;
+}
 
 float hit_sphere(const vec3& pos, float rad, const ray& r)
 {
@@ -24,7 +32,8 @@ vec3 color(const ray& r, body *b)
     hit h;
     if(b->trace(r, FLT_MAX, h))
     {
-        return (h.normal+vec3(1.0f, 1.0f, 1.0f))*0.5f;
+        //return (h.normal+vec3(1.0f, 1.0f, 1.0f))*0.5f;
+        return color(ray(h.p, normalize(h.normal+sphereRand())), b)*0.5;
     }
     
     float t = (r.direction.y() + 1.0f)*0.5f;
@@ -58,15 +67,15 @@ int main()
         vec3 col(0,0,0);
         for( int k = 0; k<SAMPLE_COUNT; k++ )
         {
-            float u = ( i + float(rand()%1000-500)/1000 )/float(IMG_WIDTH);
-            float v = ( j  + float(rand()%1000-500)/1000 )/float(IMG_HEIGHT);
+            float u = ( i + drand48() - 0.5 )/float(IMG_WIDTH);
+            float v = ( j  + drand48() - 0.5  )/float(IMG_HEIGHT);
 
             ray r = cam.getRay(u, v);
             col = col + color(r, world);
         }
 
         col = col/float(SAMPLE_COUNT);
-        image << int(col[0]*255.99f) << " " << int(col[1]*255.99f) << " " << int(col[2]*255.99f) << "\n";
+        image << int(sqrt(col[0])*255.99f) << " " << int(sqrt(col[1])*255.99f) << " " << int(sqrt(col[2])*255.99f) << "\n";
     }
 
 
