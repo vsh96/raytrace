@@ -1,12 +1,5 @@
 #pragma once
-#include "ray.hpp"
-
-struct hit
-{
-    float t;
-    vec3 p;
-    vec3 normal;
-};
+#include "material.hpp"
 
 class body
 {

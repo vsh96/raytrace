@@ -7,14 +7,7 @@
 #include "scene.hpp"
 #include "camera.hpp"
 
-vec3 sphereRand()
-{
-    vec3 p;
-    do{
-        p = vec3(drand48(),drand48(),drand48())*2 - vec3(1,1,1);
-    }while(dot(p,p)<1.0f);
-    return p;
-}
+
 
 float hit_sphere(const vec3& pos, float rad, const ray& r)
 {
@@ -27,13 +20,20 @@ float hit_sphere(const vec3& pos, float rad, const ray& r)
     return (-b-sqrt(d))/(2*a);
 }
 
-vec3 color(const ray& r, body *b)
+vec3 color(const ray& r, body *b, int depth = 0)
 {
     hit h;
     if(b->trace(r, FLT_MAX, h))
     {
+        ray ref;
+        vec3 atten;
+        if(depth<50 && h.matptr->scatter(r, h, atten, ref))
+        {
+            return atten*color(ref, b, depth+1);
+        }else
+            return vec3(0,0,0);
         //return (h.normal+vec3(1.0f, 1.0f, 1.0f))*0.5f;
-        return color(ray(h.p, normalize(h.normal+sphereRand())), b)*0.5;
+        //return color(ray(h.p, normalize(h.normal+sphereRand())), b)*0.5;
     }
     
     float t = (r.direction.y() + 1.0f)*0.5f;
@@ -55,10 +55,12 @@ int main()
     vec3 vert(0.0f, 2.0f, 0.0f);
     vec3 origin(0.0f, 0.0f, 0.0f);
 
-    body *list[2];
-    list[0] = new sphere(vec3(0.0, 0.0, -1.0), 0.5);
-    list[1] = new sphere(vec3(0.0, -100.5, -1.0), 100.0);
-    body *world = new scene(list, 2);
+    body *list[4];
+    list[0] = new sphere(vec3(0.0, 0.0, -1.0), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
+    list[1] = new sphere(vec3(0.0, -100.5, -1.0), 100.0, new lambertian(vec3(0.8, 0.8, 0.0)));
+    list[2] = new sphere(vec3(1.0, 0.0, -1.0), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.3));
+    list[3] = new sphere(vec3(-1.0, 0.0, -1.0), 0.5, new metal(vec3(0.8, 0.8, 0.8), 9.0));
+    body *world = new scene(list, 4);
     camera cam;
 
     for( int j = IMG_HEIGHT-1; j>=0; j-- )
