@@ -1,13 +1,13 @@
 #pragma once
-#include "vec3.hpp"
+#include <glm/glm.hpp>
 
 class ray
 {
 public:
     ray(){}
-    ray(const vec3& o, const vec3& d){ origin = o; direction = d;}
-    vec3 point(float t) const{ return origin + direction*t; }
+    ray(const glm::vec3& o, const glm::vec3& d){ origin = o; direction = d;}
+    glm::vec3 point(float t) const{ return origin + direction*t; }
 
-    vec3 origin;
-    vec3 direction;
+    glm::vec3 origin;
+    glm::vec3 direction;
 };
