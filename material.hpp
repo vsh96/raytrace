@@ -1,5 +1,7 @@
 #pragma once
 #include <stdlib.h>
+#include <glm/gtx/norm.hpp>
+#include <glm/gtc/random.hpp>
 #include "ray.hpp"
 
 class material;
@@ -19,25 +21,6 @@ glm::vec3 sphereRand()
         p = glm::vec3(drand48(),drand48(),drand48())*2.f - glm::vec3(1,1,1);
     }while(glm::dot(p,p)>1.0f);
     return p;
-}
-
-glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n)
-{
-    return v - n*glm::dot(v,n)*2.f;
-}
-
-bool refract(const glm::vec3& v, const glm::vec3& n, float ni_over_nt, glm::vec3& refracted)
-{
-    glm::vec3 uv = glm::normalize(v);
-    float dt = glm::dot(uv, n);
-    float discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
-    if(discriminant > 0)
-    {
-        refracted = (uv-n*dt)*ni_over_nt - n*(float)sqrt(discriminant);
-        return true;
-    }
-    else
-        return false;
 }
 
 float schlick(float cosine, float ref_idx)
@@ -72,7 +55,7 @@ public:
     metal(const glm::vec3 a, float r): albedo(a) {if(r>1)roughness=1.0; else roughness = r;}
     virtual bool scatter(const ray in, const hit& h, glm::vec3& atten, ray& ref) const
     {
-        ref = ray(h.p, reflect(in.direction, h.normal)+sphereRand()*roughness);
+        ref = ray(h.p, reflect(in.direction, h.normal)+glm::ballRand(1.0f)*roughness);
         atten = albedo;
         return (glm::dot(ref.direction, h.normal) > 0);
     }
@@ -104,14 +87,15 @@ class dielectric : public material {
                 ni_over_nt = 1.0/ref_idx;
                 cosine = -glm::dot(in.direction, h.normal)/length(in.direction);
             }
-            if(refract(in.direction, outward_normal, ni_over_nt, refracted))
+            refracted = glm::refract(in.direction, outward_normal, ni_over_nt);
+            if(length2(refracted)>0.0)
             {
                 reflect_prob = schlick(cosine, ref_idx);
             }
             else
             {
                 ref = ray(h.p, reflected);
-                reflect_prob = 1.0;
+                return true;
             }
 
             if(drand48() < reflect_prob)
