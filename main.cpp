@@ -1,27 +1,16 @@
 #include <fstream>
 #include <float.h>
-#include <stdlib.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/random.hpp>
 #include "ray.hpp"
 #include "sphere.hpp"
 #include "scene.hpp"
 #include "camera.hpp"
 
 
-
-float hit_sphere(const glm::vec3& pos, float rad, const ray& r)
-{
-    glm::vec3 oc = r.origin - pos;
-    float a = glm::dot(r.direction, r.direction);
-    float b = glm::dot(oc, r.direction)*2.0f;
-    float c = glm::dot(oc, oc) - rad*rad;
-    float d = b*b - 4*a*c;
-    if(d < 0) return -1;
-    return (-b-sqrt(d))/(2*a);
-}
-
 glm::vec3 color(const ray& r, body *b, int depth = 0)
 {
+    
     hit h;
     if(b->trace(r, FLT_MAX, h))
     {
@@ -32,8 +21,6 @@ glm::vec3 color(const ray& r, body *b, int depth = 0)
             return atten*color(ref, b, depth+1);
         }else
             return glm::vec3(0,0,0);
-        //return (h.normal+vec3(1.0f, 1.0f, 1.0f))*0.5f;
-        //return color(ray(h.p, normalize(h.normal+sphereRand())), b)*0.5;
     }
     
     float t = (r.direction.y + 1.0f)*0.5f;
@@ -43,17 +30,16 @@ glm::vec3 color(const ray& r, body *b, int depth = 0)
 int main()
 {
     int IMG_WIDTH = 400;
-    int IMG_HEIGHT = 200;
-    int SAMPLE_COUNT = 100;
+    int IMG_HEIGHT = 400;
+    int SAMPLE_COUNT = 16;
 
     std::ofstream image("result.ppm");
 
     image << "P3\n" << IMG_WIDTH << " " << IMG_HEIGHT << "\n255\n";
 
-    glm::vec3 corner(-2.0f, -1.0f, -1.0f);
-    glm::vec3 horiz(4.0f, 0.0f, 0.0f);
-    glm::vec3 vert(0.0f, 2.0f, 0.0f);
-    glm::vec3 origin(0.0f, 0.0f, 0.0f);
+    glm::vec3 lookfrom(0.0, 0.0, 1.0);
+    glm::vec3 lookat(0.0, 0.0, -1.0);
+    float dist_to_focus = (lookfrom - lookat).length();
 
     body *list[5];
     list[0] = new sphere(glm::vec3(0.0, 0.0, -1.0), 0.5, new lambertian(glm::vec3(0.8, 0.3, 0.3)));
@@ -62,18 +48,21 @@ int main()
     list[3] = new sphere(glm::vec3(-1.0, 0.0, -1.0), 0.5, new dielectric(1.5));
     list[4] = new sphere(glm::vec3(-1.0, 0.0, -1.0), -0.45, new dielectric(1.5));
     body *world = new scene(list, 5);
-    camera cam;
 
-    for( int j = IMG_HEIGHT-1; j>=0; j-- )
-    for( int i = 0; i<IMG_WIDTH; i++ )
+    camera cam(lookfrom, lookat);
+
+    for( int j = IMG_HEIGHT/2; j>= -IMG_HEIGHT/2; j-- )
+    for( int i = -IMG_WIDTH/2; i < IMG_WIDTH/2; i++ )
     {
         glm::vec3 col(0,0,0);
         for( int k = 0; k<SAMPLE_COUNT; k++ )
         {
-            float u = ( i + drand48() - 0.5 )/float(IMG_WIDTH);
-            float v = ( j  + drand48() - 0.5  )/float(IMG_HEIGHT);
+            glm::vec2 uv = ( glm::vec2(i, j) +
+            glm::linearRand(glm::vec2(-0.5 -0.5), glm::vec2(0.5, 0.5)))/glm::vec2(IMG_WIDTH, IMG_HEIGHT);
+            //(glm::vec2(i, j)-glm::vec2(IMG_WIDTH, IMG_HEIGHT)/2.0f
+            //+ glm::linearRand(glm::vec2(-0.5 -0.5), glm::vec2(0.5, 0.5)))/float(glm::min(IMG_WIDTH, IMG_HEIGHT));
 
-            ray r = cam.getRay(u, v);
+            ray r = cam.getRay(uv);
             col = col + color(r, world);
         }
 
